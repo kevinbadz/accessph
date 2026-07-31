@@ -16,6 +16,10 @@ export const strings = {
     tapMicToSpeak: "Tap the microphone and speak a command",
     didNotUnderstand: "Sorry, I didn't catch that. Try again.",
     micNotSupported: "Voice commands aren't supported in this browser.",
+    micPermissionDenied:
+      "Microphone access was denied. Allow microphone access for this site in your browser settings, then try again.",
+    micNoMicrophone: "No microphone was found on this device.",
+    micNetworkError: "Voice recognition needs an internet connection. Check your connection and try again.",
     captureAndRead: "Capture & Read",
     choosePhoto: "Choose Photo Instead",
     readAgain: "Read Again",
@@ -110,6 +114,10 @@ export const strings = {
     tapMicToSpeak: "Pindutin ang mikropono at magsalita ng utos",
     didNotUnderstand: "Pasensya, hindi ko nakuha. Subukan ulit.",
     micNotSupported: "Hindi suportado ang voice commands sa browser na ito.",
+    micPermissionDenied:
+      "Na-deny ang microphone access. I-allow ang mic para sa site na ito sa settings ng browser mo, tapos subukan ulit.",
+    micNoMicrophone: "Walang nahanap na microphone sa device na ito.",
+    micNetworkError: "Kailangan ng internet ang voice recognition. Suriin ang connection mo at subukan ulit.",
     captureAndRead: "Kumuha ng Litrato",
     choosePhoto: "Pumili na lang ng Litrato",
     readAgain: "Basahin Ulit",

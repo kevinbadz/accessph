@@ -3,9 +3,28 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { useSettings } from "@/components/SettingsProvider";
-import { t } from "@/lib/i18n";
+import { t, type TranslationKey } from "@/lib/i18n";
 import { getSpeechRecognitionCtor, speak, stopSpeaking } from "@/lib/speech";
 import { useSpeechRecognitionSupported } from "@/hooks/useSpeechRecognitionSupported";
+
+// SpeechRecognition's error codes are collapsed into one generic
+// "didn't catch that" message by default, which hides genuinely different,
+// often fixable problems (permission never granted, no network reaching the
+// recognition service, no mic hardware) behind a message that suggests the
+// user just needs to try again louder — when trying again won't help at all.
+function micErrorKey(errorCode: string): TranslationKey {
+  switch (errorCode) {
+    case "not-allowed":
+    case "service-not-allowed":
+      return "micPermissionDenied";
+    case "audio-capture":
+      return "micNoMicrophone";
+    case "network":
+      return "micNetworkError";
+    default:
+      return "didNotUnderstand";
+  }
+}
 
 type CommandRoute = { pattern: RegExp; action: (router: ReturnType<typeof useRouter>) => void };
 
@@ -62,9 +81,12 @@ export default function VoiceCommandBar() {
       }
     };
 
-    recognition.onerror = () => {
+    recognition.onerror = (event) => {
+      console.error("AccessPH: speech recognition error", event.error);
       setListening(false);
-      setStatus(t(settings.language, "didNotUnderstand"));
+      const key = micErrorKey(event.error);
+      setStatus(t(settings.language, key));
+      speak(t(settings.language, key), settings.language, settings.speechRate);
     };
 
     recognition.onend = () => setListening(false);
@@ -72,9 +94,9 @@ export default function VoiceCommandBar() {
     recognitionRef.current = recognition;
     try {
       recognition.start();
-    } catch {
-      // Some browsers (notably iOS Safari) can throw synchronously instead of
-      // firing onerror — fail into the same spoken message either way.
+    } catch (error) {
+      // Some browsers can throw synchronously instead of firing onerror.
+      console.error("AccessPH: speech recognition failed to start", error);
       setListening(false);
       setStatus(t(settings.language, "didNotUnderstand"));
     }
@@ -93,11 +115,10 @@ export default function VoiceCommandBar() {
         </p>
       )}
       {supported === false ? (
-        // Apple has never implemented SpeechRecognition in Safari (or any iOS
-        // browser, which all run on WebKit) — this is a permanent platform
-        // limit, not a temporary error. Showing an inert, greyed-out icon with
-        // a persistent explanation is more honest than a button that always
-        // fails, and avoids a tap-then-fail-message dead end every time.
+        // Some browsers genuinely don't implement SpeechRecognition at all
+        // (older iOS versions before 14.5, some non-Chromium browsers) — for
+        // those, showing an inert, greyed-out icon with a persistent
+        // explanation is more honest than a button that always fails.
         <div className="flex flex-col items-center gap-1">
           <div
             aria-hidden="true"
