@@ -3,10 +3,12 @@
 import BigButton from "@/components/BigButton";
 import { useSettings } from "@/components/SettingsProvider";
 import { t } from "@/lib/i18n";
+import { useSpeechRecognitionSupported } from "@/hooks/useSpeechRecognitionSupported";
 
 export default function Home() {
   const { settings } = useSettings();
   const lang = settings.language;
+  const voiceSupported = useSpeechRecognitionSupported();
 
   return (
     <main id="main-content" className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-8 px-5 py-10">
@@ -43,9 +45,11 @@ export default function Home() {
         />
       </nav>
 
-      <p className="text-center text-sm text-slate-500 dark:text-slate-500">
-        {t(lang, "voiceCommandsSub")}
-      </p>
+      {voiceSupported !== false && (
+        <p className="text-center text-sm text-slate-500 dark:text-slate-500">
+          {t(lang, "voiceCommandsSub")}
+        </p>
+      )}
     </main>
   );
 }

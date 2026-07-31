@@ -4,12 +4,8 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { useSettings } from "@/components/SettingsProvider";
 import { t } from "@/lib/i18n";
-import {
-  getSpeechRecognitionCtor,
-  isSpeechRecognitionSupported,
-  speak,
-  stopSpeaking,
-} from "@/lib/speech";
+import { getSpeechRecognitionCtor, speak, stopSpeaking } from "@/lib/speech";
+import { useSpeechRecognitionSupported } from "@/hooks/useSpeechRecognitionSupported";
 
 type CommandRoute = { pattern: RegExp; action: (router: ReturnType<typeof useRouter>) => void };
 
@@ -29,7 +25,7 @@ export default function VoiceCommandBar() {
   const [status, setStatus] = useState("");
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-  const supported = isSpeechRecognitionSupported();
+  const supported = useSpeechRecognitionSupported();
 
   function startListening() {
     if (!supported) {
@@ -96,16 +92,35 @@ export default function VoiceCommandBar() {
           {status}
         </p>
       )}
-      <button
-        type="button"
-        onClick={startListening}
-        aria-label={t(settings.language, "voiceCommands")}
-        className={`flex h-16 w-16 items-center justify-center rounded-full text-3xl text-white shadow-xl transition-transform focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-blue-700 active:scale-95 ${
-          listening ? "bg-red-600 animate-pulse" : "bg-blue-700 hover:bg-blue-800"
-        }`}
-      >
-        <span aria-hidden="true">{listening ? "●" : "🎙️"}</span>
-      </button>
+      {supported === false ? (
+        // Apple has never implemented SpeechRecognition in Safari (or any iOS
+        // browser, which all run on WebKit) — this is a permanent platform
+        // limit, not a temporary error. Showing an inert, greyed-out icon with
+        // a persistent explanation is more honest than a button that always
+        // fails, and avoids a tap-then-fail-message dead end every time.
+        <div className="flex flex-col items-center gap-1">
+          <div
+            aria-hidden="true"
+            className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-400 text-3xl text-white opacity-60 dark:bg-slate-700"
+          >
+            🎙️
+          </div>
+          <p className="max-w-56 px-4 text-center text-xs text-slate-500 dark:text-slate-500">
+            {t(settings.language, "micNotSupported")}
+          </p>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={startListening}
+          aria-label={t(settings.language, "voiceCommands")}
+          className={`flex h-16 w-16 items-center justify-center rounded-full text-3xl text-white shadow-xl transition-transform focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-blue-700 active:scale-95 ${
+            listening ? "bg-red-600 animate-pulse" : "bg-blue-700 hover:bg-blue-800"
+          }`}
+        >
+          <span aria-hidden="true">{listening ? "●" : "🎙️"}</span>
+        </button>
+      )}
     </div>
   );
 }
