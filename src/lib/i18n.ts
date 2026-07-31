@@ -68,6 +68,8 @@ export const strings = {
     framingHint: "Fill the frame with the text. Hold steady, and use good lighting.",
     lowConfidenceWarning: "I'm not fully sure I read this correctly — please double-check:",
     lowConfidenceSpokenPrefix: "I'm not fully sure about this, but here's what I read.",
+    preparingModel: "Getting ready — downloading reading files (first time only, needs internet)…",
+    preparingModelHint: "Getting ready in the background…",
     privacy: "Privacy & Your Data",
     privacySub: "What this app does — and doesn't do — with your information",
     privacyIntro:
@@ -157,6 +159,8 @@ export const strings = {
     framingHint: "Punuin ng teksto ang frame. Manatiling steady, at gumamit ng magandang ilaw.",
     lowConfidenceWarning: "Hindi ako sigurado kung tama ang pagkabasa ko nito — pakisuri ulit:",
     lowConfidenceSpokenPrefix: "Hindi ako sigurado dito, pero ito ang nabasa ko.",
+    preparingModel: "Naghahanda — dina-download ang reading files (isang beses lang, kailangan ng internet)…",
+    preparingModelHint: "Naghahanda sa background…",
     privacy: "Privacy at Data Mo",
     privacySub: "Ano ang ginagawa — at hindi ginagawa — ng app na ito sa impormasyon mo",
     privacyIntro:

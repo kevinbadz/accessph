@@ -40,6 +40,7 @@ export default function ReaderPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const workerRef = useRef<TesseractWorker | null>(null);
+  const workerPromiseRef = useRef<Promise<TesseractWorker> | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const mountedRef = useRef(true);
 
@@ -48,6 +49,8 @@ export default function ReaderPage() {
   const [resultText, setResultText] = useState("");
   const [errorKey, setErrorKey] = useState<TranslationKey>("cameraError");
   const [lowConfidence, setLowConfidence] = useState(false);
+  const [modelReady, setModelReady] = useState(false);
+  const [scanPhase, setScanPhase] = useState<"preparing" | "recognizing">("preparing");
 
   const stopStream = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -111,32 +114,44 @@ export default function ReaderPage() {
     }
   }, [stopStream]);
 
+  const getWorker = useCallback((): Promise<TesseractWorker> => {
+    if (workerPromiseRef.current) return workerPromiseRef.current;
+
+    workerPromiseRef.current = createWorker(["eng", "fil"], 1, {
+      logger: (m) => {
+        if (!mountedRef.current) return;
+        setScanPhase(m.status === "recognizing text" ? "recognizing" : "preparing");
+        setProgress(m.progress);
+      },
+    }).then(async (worker) => {
+      // AUTO handles the mixed layouts (signs, labels, forms) this app is built
+      // for better than letting Tesseract fall back to its default segmentation.
+      await worker.setParameters({ tessedit_pageseg_mode: PSM.AUTO });
+      workerRef.current = worker;
+      if (mountedRef.current) setModelReady(true);
+      return worker;
+    });
+
+    return workerPromiseRef.current;
+  }, []);
+
   useEffect(() => {
     mountedRef.current = true;
     // Synchronizing with the camera (external system) on mount.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     startCamera();
+    // Start downloading/initializing the OCR model immediately in the
+    // background — on a slow connection this can take a while, and doing it
+    // now instead of on first tap means it's often ready by the time someone
+    // has framed their shot.
+    getWorker();
 
     return () => {
       mountedRef.current = false;
       stopStream();
       workerRef.current?.terminate();
     };
-  }, [startCamera, stopStream]);
-
-  async function getWorker(): Promise<TesseractWorker> {
-    if (workerRef.current) return workerRef.current;
-    const worker = await createWorker(["eng", "fil"], 1, {
-      logger: (m) => {
-        if (m.status === "recognizing text") setProgress(m.progress);
-      },
-    });
-    // AUTO handles the mixed layouts (signs, labels, forms) this app is built
-    // for better than letting Tesseract fall back to its default segmentation.
-    await worker.setParameters({ tessedit_pageseg_mode: PSM.AUTO });
-    workerRef.current = worker;
-    return worker;
-  }
+  }, [startCamera, stopStream, getWorker]);
 
   async function captureAndRead() {
     const video = videoRef.current;
@@ -210,9 +225,16 @@ export default function ReaderPage() {
         {status === "ready" && (
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-between p-4">
             <div className="mt-8 flex-1 w-full max-w-[85%] rounded-2xl border-4 border-dashed border-white/70" />
-            <p className="mb-2 rounded-full bg-black/60 px-4 py-2 text-center text-sm text-white">
-              {t(lang, "framingHint")}
-            </p>
+            <div className="mb-2 flex flex-col items-center gap-1.5">
+              {!modelReady && (
+                <p className="rounded-full bg-black/60 px-4 py-1.5 text-center text-xs text-white/80">
+                  {t(lang, "preparingModelHint")}
+                </p>
+              )}
+              <p className="rounded-full bg-black/60 px-4 py-2 text-center text-sm text-white">
+                {t(lang, "framingHint")}
+              </p>
+            </div>
           </div>
         )}
 
@@ -230,8 +252,10 @@ export default function ReaderPage() {
         )}
 
         {status === "scanning" && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60 text-white">
-            <p className="text-lg font-semibold">{t(lang, "scanning")}</p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60 p-6 text-center text-white">
+            <p className="text-lg font-semibold">
+              {t(lang, scanPhase === "preparing" ? "preparingModel" : "scanning")}
+            </p>
             <div className="h-2 w-2/3 overflow-hidden rounded-full bg-white/30">
               <div
                 className="h-full rounded-full bg-blue-500 transition-all"
