@@ -6,6 +6,7 @@ import { useSettings } from "@/components/SettingsProvider";
 import { t, type TranslationKey } from "@/lib/i18n";
 import { getSpeechRecognitionCtor, speak, stopSpeaking } from "@/lib/speech";
 import { useSpeechRecognitionSupported } from "@/hooks/useSpeechRecognitionSupported";
+import { isIOS, isAndroid } from "@/lib/platform";
 
 // SpeechRecognition's error codes are collapsed into one generic
 // "didn't catch that" message by default, which hides genuinely different,
@@ -16,6 +17,8 @@ function micErrorKey(errorCode: string): TranslationKey {
   switch (errorCode) {
     case "not-allowed":
     case "service-not-allowed":
+      if (isIOS()) return "micPermissionDeniedIOS";
+      if (isAndroid()) return "micPermissionDeniedAndroid";
       return "micPermissionDenied";
     case "audio-capture":
       return "micNoMicrophone";
@@ -110,7 +113,11 @@ export default function VoiceCommandBar() {
       style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)" }}
     >
       {status && (
-        <p role="status" aria-live="polite" className="px-4 text-sm text-slate-700 dark:text-slate-300">
+        <p
+          role="status"
+          aria-live="polite"
+          className="mx-auto max-w-sm px-4 text-center text-sm text-slate-700 dark:text-slate-300"
+        >
           {status}
         </p>
       )}

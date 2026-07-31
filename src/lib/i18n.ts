@@ -18,6 +18,10 @@ export const strings = {
     micNotSupported: "Voice commands aren't supported in this browser.",
     micPermissionDenied:
       "Microphone access was denied. Allow microphone access for this site in your browser settings, then try again.",
+    micPermissionDeniedIOS:
+      "Microphone blocked. In Safari, tap the \"Aa\" icon in the address bar → Website Settings → Microphone → Allow. If that's not there, go to the Settings app → Safari → Settings for Websites → Microphone.",
+    micPermissionDeniedAndroid:
+      "Microphone blocked. Tap the lock or info icon next to the address bar → Permissions → Microphone → Allow, then reload the page.",
     micNoMicrophone: "No microphone was found on this device.",
     micNetworkError: "Voice recognition needs an internet connection. Check your connection and try again.",
     captureAndRead: "Capture & Read",
@@ -116,6 +120,10 @@ export const strings = {
     micNotSupported: "Hindi suportado ang voice commands sa browser na ito.",
     micPermissionDenied:
       "Na-deny ang microphone access. I-allow ang mic para sa site na ito sa settings ng browser mo, tapos subukan ulit.",
+    micPermissionDeniedIOS:
+      "Naka-block ang mikropono. Sa Safari, pindutin ang \"Aa\" icon sa address bar → Website Settings → Microphone → Allow. Kung wala iyon, pumunta sa Settings app → Safari → Settings for Websites → Microphone.",
+    micPermissionDeniedAndroid:
+      "Naka-block ang mikropono. Pindutin ang lock o info icon sa tabi ng address bar → Permissions → Microphone → Allow, tapos i-reload ang page.",
     micNoMicrophone: "Walang nahanap na microphone sa device na ito.",
     micNetworkError: "Kailangan ng internet ang voice recognition. Suriin ang connection mo at subukan ulit.",
     captureAndRead: "Kumuha ng Litrato",
