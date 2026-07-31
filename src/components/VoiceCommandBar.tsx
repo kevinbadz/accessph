@@ -33,6 +33,11 @@ export default function VoiceCommandBar() {
 
   function startListening() {
     if (!supported) {
+      // Show this on screen, not just spoken — speech can fail silently for
+      // reasons that have nothing to do with support (iPhone's physical mute
+      // switch silences web speech audio in Safari, Bluetooth routing, etc.),
+      // and relying on audio alone means "nothing happens" if it doesn't play.
+      setStatus(t(settings.language, "micNotSupported"));
       speak(t(settings.language, "micNotSupported"), settings.language, settings.speechRate);
       return;
     }
