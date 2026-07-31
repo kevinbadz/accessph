@@ -156,11 +156,31 @@ export default function ReaderPage() {
     const canvas = canvasRef.current;
     if (!video || !canvas) return;
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    // The preview box shows the video cropped to a 3:4 box via object-cover —
+    // OCR must read exactly that region, not the full native camera frame.
+    // Otherwise, on any camera whose real field of view is wider or taller
+    // than 3:4, OCR reads real pixels the user never actually saw on screen,
+    // which looks like it's reading the wrong thing entirely.
+    const PREVIEW_ASPECT = 3 / 4;
+    const videoAspect = video.videoWidth / video.videoHeight;
+
+    let sx = 0;
+    let sy = 0;
+    let sWidth = video.videoWidth;
+    let sHeight = video.videoHeight;
+    if (videoAspect > PREVIEW_ASPECT) {
+      sWidth = video.videoHeight * PREVIEW_ASPECT;
+      sx = (video.videoWidth - sWidth) / 2;
+    } else {
+      sHeight = video.videoWidth / PREVIEW_ASPECT;
+      sy = (video.videoHeight - sHeight) / 2;
+    }
+
+    canvas.width = sWidth;
+    canvas.height = sHeight;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
     preprocessForOcr(canvas);
 
     setStatus("scanning");
