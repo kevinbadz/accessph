@@ -39,6 +39,7 @@ export default function ReaderPage() {
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const workerRef = useRef<TesseractWorker | null>(null);
   const workerPromiseRef = useRef<Promise<TesseractWorker> | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -151,38 +152,7 @@ export default function ReaderPage() {
     };
   }, [startCamera, stopStream, getWorker]);
 
-  async function captureAndRead() {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas) return;
-
-    // The preview box shows the video cropped to a 3:4 box via object-cover —
-    // OCR must read exactly that region, not the full native camera frame.
-    // Otherwise, on any camera whose real field of view is wider or taller
-    // than 3:4, OCR reads real pixels the user never actually saw on screen,
-    // which looks like it's reading the wrong thing entirely.
-    const PREVIEW_ASPECT = 3 / 4;
-    const videoAspect = video.videoWidth / video.videoHeight;
-
-    let sx = 0;
-    let sy = 0;
-    let sWidth = video.videoWidth;
-    let sHeight = video.videoHeight;
-    if (videoAspect > PREVIEW_ASPECT) {
-      sWidth = video.videoHeight * PREVIEW_ASPECT;
-      sx = (video.videoWidth - sWidth) / 2;
-    } else {
-      sHeight = video.videoWidth / PREVIEW_ASPECT;
-      sy = (video.videoHeight - sHeight) / 2;
-    }
-
-    canvas.width = sWidth;
-    canvas.height = sHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
-    preprocessForOcr(canvas);
-
+  async function runOcr(canvas: HTMLCanvasElement) {
     setStatus("scanning");
     setProgress(0);
 
@@ -227,6 +197,81 @@ export default function ReaderPage() {
     }
   }
 
+  async function captureAndRead() {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+
+    // The preview box shows the video cropped to a 3:4 box via object-cover —
+    // OCR must read exactly that region, not the full native camera frame.
+    // Otherwise, on any camera whose real field of view is wider or taller
+    // than 3:4, OCR reads real pixels the user never actually saw on screen,
+    // which looks like it's reading the wrong thing entirely.
+    const PREVIEW_ASPECT = 3 / 4;
+    const videoAspect = video.videoWidth / video.videoHeight;
+
+    let sx = 0;
+    let sy = 0;
+    let sWidth = video.videoWidth;
+    let sHeight = video.videoHeight;
+    if (videoAspect > PREVIEW_ASPECT) {
+      sWidth = video.videoHeight * PREVIEW_ASPECT;
+      sx = (video.videoWidth - sWidth) / 2;
+    } else {
+      sHeight = video.videoWidth / PREVIEW_ASPECT;
+      sy = (video.videoHeight - sHeight) / 2;
+    }
+
+    canvas.width = sWidth;
+    canvas.height = sHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
+    preprocessForOcr(canvas);
+
+    await runOcr(canvas);
+  }
+
+  async function handleFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = ""; // allow choosing the same file again later
+    const canvas = canvasRef.current;
+    if (!file || !canvas) return;
+
+    // Lets someone who can't hold or aim a live camera steadily — or a
+    // caregiver taking the photo for them — use their phone's own camera or
+    // photo library instead, through whatever accessibility tools their OS's
+    // native picker already supports, then bring the result in here just for
+    // the reading step.
+    const objectUrl = URL.createObjectURL(file);
+    try {
+      const img = new Image();
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("image load failed"));
+        img.src = objectUrl;
+      });
+
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(img, 0, 0);
+      preprocessForOcr(canvas);
+
+      await runOcr(canvas);
+    } catch (error) {
+      console.error("AccessPH: failed to load chosen photo", error);
+      setResultText("");
+      setLowConfidence(false);
+      setOcrFailed(true);
+      setStatus("result");
+      speak(t(lang, "ocrError"), lang, settings.speechRate);
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  }
+
   function retake() {
     setResultText("");
     setLowConfidence(false);
@@ -240,6 +285,15 @@ export default function ReaderPage() {
 
   return (
     <main id="main-content" className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-4 px-5 py-6">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelected}
+        className="hidden"
+        aria-hidden="true"
+        tabIndex={-1}
+      />
       <div className="flex items-center justify-between">
         <Link href="/" className="text-lg font-medium text-blue-700 dark:text-blue-400">
           ← {t(lang, "back")}
@@ -277,13 +331,22 @@ export default function ReaderPage() {
         {status === "camera-error" && (
           <div role="alert" className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center text-white">
             <p className="text-lg">{t(lang, errorKey)}</p>
-            <button
-              type="button"
-              onClick={startCamera}
-              className="min-h-12 rounded-xl bg-blue-700 px-6 text-lg font-bold hover:bg-blue-800 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2"
-            >
-              {t(lang, "tryAgain")}
-            </button>
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={startCamera}
+                className="min-h-12 rounded-xl bg-blue-700 px-6 text-lg font-bold hover:bg-blue-800 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2"
+              >
+                {t(lang, "tryAgain")}
+              </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="min-h-12 rounded-xl border-2 border-white/70 px-6 text-lg font-bold hover:bg-white/10 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2"
+              >
+                🖼️ {t(lang, "choosePhoto")}
+              </button>
+            </div>
           </div>
         )}
 
@@ -317,13 +380,22 @@ export default function ReaderPage() {
 
       <div className="flex flex-col gap-3">
         {status === "ready" && (
-          <button
-            type="button"
-            onClick={captureAndRead}
-            className="min-h-16 rounded-2xl bg-blue-700 text-2xl font-bold text-white shadow-md hover:bg-blue-800 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2"
-          >
-            {t(lang, "captureAndRead")}
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={captureAndRead}
+              className="min-h-16 rounded-2xl bg-blue-700 text-2xl font-bold text-white shadow-md hover:bg-blue-800 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2"
+            >
+              {t(lang, "captureAndRead")}
+            </button>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="min-h-14 rounded-2xl border-2 border-slate-400 text-lg font-bold hover:bg-slate-100 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 dark:border-slate-600 dark:hover:bg-slate-800"
+            >
+              🖼️ {t(lang, "choosePhoto")}
+            </button>
+          </>
         )}
 
         {status === "result" && (
