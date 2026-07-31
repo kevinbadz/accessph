@@ -9,6 +9,7 @@ import { speak } from "@/lib/speech";
 import { preprocessForOcr } from "@/lib/image-preprocess";
 import { computeObjectCoverCrop } from "@/lib/geometry";
 import { cameraErrorKey } from "@/lib/error-messages";
+import { addScanToHistory } from "@/lib/scan-history";
 
 // A page-level mean confidence below this (0-100 scale) is treated as
 // unreliable enough to warn the user rather than reading it back as fact.
@@ -163,6 +164,10 @@ export default function ReaderPage() {
       setOcrFailed(false);
       setStatus("result");
 
+      if (text) {
+        addScanToHistory({ text, lowConfidence: isLowConfidence });
+      }
+
       if (!text) {
         speak(t(lang, "noTextFound"), lang, settings.speechRate);
       } else if (isLowConfidence) {
@@ -269,7 +274,13 @@ export default function ReaderPage() {
           ← {t(lang, "back")}
         </Link>
         <h1 className="text-xl font-bold">{t(lang, "readText")}</h1>
-        <span className="w-16" aria-hidden="true" />
+        <Link
+          href="/history"
+          aria-label={t(lang, "viewHistory")}
+          className="flex w-16 justify-end text-2xl text-blue-700 dark:text-blue-400"
+        >
+          <span aria-hidden="true">🕘</span>
+        </Link>
       </div>
 
       <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-black">

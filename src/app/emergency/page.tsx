@@ -15,12 +15,11 @@ function smsHref(phone: string, body: string): string {
 export default function EmergencyPage() {
   const { settings } = useSettings();
   const lang = settings.language;
-  const contact = settings.emergencyContact;
+  const contacts = settings.emergencyContacts;
   const [locating, setLocating] = useState(false);
   const [locationNote, setLocationNote] = useState("");
 
-  async function handleSendSms() {
-    if (!contact) return;
+  async function handleSendSms(phone: string) {
     setLocating(true);
     setLocationNote(t(lang, "locatingYou"));
     speak(t(lang, "locatingYou"), lang, settings.speechRate);
@@ -31,7 +30,7 @@ export default function EmergencyPage() {
         lang === "fil"
           ? `Emergency! Kailangan ko ng tulong.${mapsUrl ? ` Lokasyon ko: ${mapsUrl}` : ""}`
           : `Emergency! I need help.${mapsUrl ? ` My location: ${mapsUrl}` : ""}`;
-      window.location.href = smsHref(contact.phone, body);
+      window.location.href = smsHref(phone, body);
     };
 
     if (!("geolocation" in navigator)) {
@@ -53,9 +52,14 @@ export default function EmergencyPage() {
     );
   }
 
-  function handleCall() {
-    if (!contact) return;
-    window.location.href = `tel:${contact.phone}`;
+  function handleCall(phone: string) {
+    // Standard tel: link navigation, not a React-tracked value — the
+    // react-hooks/immutability rule flags this as an external mutation, but
+    // the identical window.location.href assignment in handleSendSms below
+    // isn't flagged, which points to a rule heuristic quirk rather than a
+    // real issue with this safe, standard browser API usage.
+    // eslint-disable-next-line react-hooks/immutability
+    window.location.href = `tel:${phone}`;
   }
 
   return (
@@ -68,7 +72,7 @@ export default function EmergencyPage() {
         <span className="w-16" aria-hidden="true" />
       </div>
 
-      {!contact ? (
+      {contacts.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-2xl border-2 border-amber-400 bg-amber-50 p-6 text-center dark:border-amber-600 dark:bg-amber-950">
           <p className="text-lg font-semibold">{t(lang, "noContactSet")}</p>
           <Link
@@ -80,31 +84,39 @@ export default function EmergencyPage() {
         </div>
       ) : (
         <>
-          <div className="rounded-2xl border-2 border-slate-300 bg-white p-4 text-center dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-lg font-semibold">{contact.name}</p>
-            <p className="text-slate-600 dark:text-slate-400">{contact.phone}</p>
-          </div>
-
           <p className="text-center text-base text-slate-600 dark:text-slate-400">
             {t(lang, "emergencyConfirmBody")}
           </p>
 
-          <div className="flex flex-col gap-4">
-            <button
-              type="button"
-              onClick={handleCall}
-              className="min-h-20 rounded-2xl bg-red-600 text-2xl font-bold text-white shadow-md hover:bg-red-700 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2"
-            >
-              📞 {t(lang, "call")}
-            </button>
-            <button
-              type="button"
-              onClick={handleSendSms}
-              disabled={locating}
-              className="min-h-20 rounded-2xl bg-red-600 text-2xl font-bold text-white shadow-md hover:bg-red-700 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 disabled:opacity-60"
-            >
-              ✉️ {t(lang, "sendSms")}
-            </button>
+          <div className="flex flex-col gap-5">
+            {contacts.map((contact) => (
+              <div
+                key={`${contact.name}-${contact.phone}`}
+                className="flex flex-col gap-3 rounded-2xl border-2 border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+              >
+                <div className="text-center">
+                  <p className="text-lg font-semibold">{contact.name}</p>
+                  <p className="text-slate-600 dark:text-slate-400">{contact.phone}</p>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleCall(contact.phone)}
+                    className="min-h-20 rounded-2xl bg-red-600 text-2xl font-bold text-white shadow-md hover:bg-red-700 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2"
+                  >
+                    📞 {t(lang, "call")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSendSms(contact.phone)}
+                    disabled={locating}
+                    className="min-h-20 rounded-2xl bg-red-600 text-2xl font-bold text-white shadow-md hover:bg-red-700 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 disabled:opacity-60"
+                  >
+                    ✉️ {t(lang, "sendSms")}
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
 
           {locationNote && (

@@ -25,5 +25,24 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: "maskable",
       },
     ],
+    // Long-press the home screen icon (Android) or the app icon (iOS 16.4+)
+    // to jump straight here — matters most for Emergency, where every second
+    // of navigation counts.
+    shortcuts: [
+      {
+        name: "Read Text",
+        short_name: "Read",
+        description: "Scan and hear text aloud",
+        url: "/reader",
+        icons: [{ src: "/icon-192x192.png", sizes: "192x192" }],
+      },
+      {
+        name: "Emergency",
+        short_name: "Emergency",
+        description: "Call or text your emergency contact",
+        url: "/emergency",
+        icons: [{ src: "/icon-192x192.png", sizes: "192x192" }],
+      },
+    ],
   };
 }

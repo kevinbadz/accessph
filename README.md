@@ -12,13 +12,14 @@ Most accessibility apps are built for US/EU users and don't support Filipino or 
 
 ## Features (v1)
 
-- **Camera text reader** — point the camera at a sign, menu, medicine label, or document; AccessPH reads it aloud in English or Filipino. Captures at high resolution, preprocesses the image for better OCR accuracy, and warns you when it isn't confident in what it read instead of guessing silently.
-- **Voice commands** — tap the mic and say "read" / "basahin", "benefits" / "benepisyo", "emergency" / "tulong", or "settings" to navigate hands-free.
-- **Emergency button** — one tap calls or texts your emergency contact with your current location (you confirm before anything sends — the app never sends messages silently).
+- **Camera text reader** — point the camera at a sign, menu, medicine label, or document; AccessPH reads it aloud in English or Filipino. Captures at high resolution, preprocesses the image for better OCR accuracy, warns you when it isn't confident in what it read instead of guessing silently, and offers "Choose Photo Instead" for anyone who can't hold or aim a live camera (or wants a caregiver to take the photo).
+- **Scan history** — the last 20 things you've read are saved locally so you can hear them again without re-scanning.
+- **Voice commands** — tap the mic and say "read" / "basahin", "benefits" / "benepisyo", "emergency" / "tulong", or "settings" to navigate hands-free. On browsers that don't support speech recognition, this is replaced with a clear explanation instead of a button that silently fails.
+- **Emergency button** — supports multiple emergency contacts (family, neighbor, barangay hotline); one tap calls or texts any of them with your current location (you confirm before anything sends — the app never sends messages silently).
 - **Government benefits finder** — plain-language guide to PWD ID requirements, the 20% discount/VAT exemption, PhilHealth coverage, education, and employment support, with read-aloud for each entry.
 - **Bilingual UI** — English and Filipino interface and text-to-speech voice, switchable in Settings, with an in-app check for whether your device has a real Filipino voice installed (and how to get one if not).
 - **Privacy page** — plain-language explanation of exactly what the camera, mic, and location are used for (all on-device, nothing uploaded).
-- **Installable PWA** — add to home screen, works offline for pages you've already visited.
+- **Installable PWA** — add to home screen, works offline for pages you've already visited, with home-screen shortcuts straight to Read Text or Emergency.
 
 ## Tech stack
 
@@ -54,22 +55,27 @@ src/
   app/
     page.tsx           Home dashboard
     reader/             Camera OCR + text-to-speech
+    history/             Past scans, saved locally
     benefits/            Government benefits finder
-    emergency/          Emergency contact call/SMS flow
-    settings/           Language, voice speed, emergency contact
+    emergency/          Emergency contacts call/SMS flow
+    settings/           Language, voice speed, emergency contacts
     privacy/             Plain-language data usage explanation
-    manifest.ts          PWA manifest
+    manifest.ts          PWA manifest + home-screen shortcuts
   components/
     SettingsProvider.tsx React context wrapping localStorage settings
     VoiceCommandBar.tsx  Persistent mic bar + voice command parsing
     ErrorBoundary.tsx    App-wide crash fallback (bilingual)
     BigButton.tsx        Shared large-tap-target button
+  hooks/
+    useSpeechRecognitionSupported.ts  Hydration-safe feature detection
   lib/
     speech.ts            Text-to-speech + speech recognition helpers
     image-preprocess.ts  Grayscale/contrast normalization for OCR accuracy (unit tested)
     geometry.ts           Camera-preview crop math (unit tested)
     error-messages.ts     Camera/mic error → user-facing message mapping (unit tested)
-    settings.ts           Settings persistence (unit tested)
+    settings.ts           Settings persistence + legacy-data migration (unit tested)
+    scan-history.ts       Local scan history storage (unit tested)
+    format-time.ts         Bilingual relative-time formatting (unit tested)
     i18n.ts               English/Filipino UI strings (unit tested for key parity)
     benefits.ts           Government benefits dataset (unit tested)
 public/

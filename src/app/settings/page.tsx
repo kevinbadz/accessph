@@ -22,8 +22,8 @@ export default function SettingsPage() {
   const { settings, updateSettings } = useSettings();
   const lang = settings.language;
 
-  const [name, setName] = useState(settings.emergencyContact?.name ?? "");
-  const [phone, setPhone] = useState(settings.emergencyContact?.phone ?? "");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [saved, setSaved] = useState(false);
   const [filipinoVoice, setFilipinoVoice] = useState<SpeechSynthesisVoice | null | "checking">(
     "checking"
@@ -44,14 +44,28 @@ export default function SettingsPage() {
     speak(next === "fil" ? "Filipino ang napili." : "English selected.", next, settings.speechRate);
   }
 
-  function handleSave(event: React.FormEvent) {
-    event.preventDefault();
-    updateSettings({
-      emergencyContact: name.trim() && phone.trim() ? { name: name.trim(), phone: phone.trim() } : null,
-    });
+  function flashSaved() {
     setSaved(true);
     speak(t(lang, "saved"), lang, settings.speechRate);
     setTimeout(() => setSaved(false), 2000);
+  }
+
+  function handleAddContact(event: React.FormEvent) {
+    event.preventDefault();
+    if (!name.trim() || !phone.trim()) return;
+    updateSettings({
+      emergencyContacts: [...settings.emergencyContacts, { name: name.trim(), phone: phone.trim() }],
+    });
+    setName("");
+    setPhone("");
+    flashSaved();
+  }
+
+  function handleRemoveContact(index: number) {
+    updateSettings({
+      emergencyContacts: settings.emergencyContacts.filter((_, i) => i !== index),
+    });
+    flashSaved();
   }
 
   return (
@@ -140,39 +154,65 @@ export default function SettingsPage() {
         />
       </section>
 
-      <form onSubmit={handleSave} className="flex flex-col gap-4">
+      <section className="flex flex-col gap-4">
         <h2 className="text-lg font-semibold">{t(lang, "emergency")}</h2>
 
-        <label className="flex flex-col gap-1">
-          <span className="font-medium">{t(lang, "contactName")}</span>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="min-h-14 rounded-xl border-2 border-slate-300 px-4 text-lg dark:border-slate-700 dark:bg-slate-900"
-            autoComplete="name"
-          />
-        </label>
+        {settings.emergencyContacts.length > 0 && (
+          <ul className="flex flex-col gap-2">
+            {settings.emergencyContacts.map((contact, index) => (
+              <li
+                key={`${contact.name}-${contact.phone}-${index}`}
+                className="flex items-center justify-between gap-3 rounded-xl border-2 border-slate-300 p-3 dark:border-slate-700"
+              >
+                <div>
+                  <p className="font-semibold">{contact.name}</p>
+                  <p className="text-slate-600 dark:text-slate-400">{contact.phone}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveContact(index)}
+                  aria-label={`${t(lang, "deleteEntry")}: ${contact.name}`}
+                  className="min-h-12 rounded-lg border-2 border-slate-400 px-4 text-base font-bold hover:bg-slate-100 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 dark:hover:bg-slate-800"
+                >
+                  {t(lang, "deleteEntry")}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
 
-        <label className="flex flex-col gap-1">
-          <span className="font-medium">{t(lang, "contactPhone")}</span>
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="min-h-14 rounded-xl border-2 border-slate-300 px-4 text-lg dark:border-slate-700 dark:bg-slate-900"
-            autoComplete="tel"
-            placeholder="+63 9XX XXX XXXX"
-          />
-        </label>
+        <form onSubmit={handleAddContact} className="flex flex-col gap-4">
+          <label className="flex flex-col gap-1">
+            <span className="font-medium">{t(lang, "contactName")}</span>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="min-h-14 rounded-xl border-2 border-slate-300 px-4 text-lg dark:border-slate-700 dark:bg-slate-900"
+              autoComplete="name"
+            />
+          </label>
 
-        <button
-          type="submit"
-          className="min-h-16 rounded-2xl bg-blue-700 text-xl font-bold text-white shadow-md hover:bg-blue-800 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2"
-        >
-          {saved ? t(lang, "saved") : t(lang, "save")}
-        </button>
-      </form>
+          <label className="flex flex-col gap-1">
+            <span className="font-medium">{t(lang, "contactPhone")}</span>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="min-h-14 rounded-xl border-2 border-slate-300 px-4 text-lg dark:border-slate-700 dark:bg-slate-900"
+              autoComplete="tel"
+              placeholder="+63 9XX XXX XXXX"
+            />
+          </label>
+
+          <button
+            type="submit"
+            className="min-h-16 rounded-2xl bg-blue-700 text-xl font-bold text-white shadow-md hover:bg-blue-800 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2"
+          >
+            {saved ? t(lang, "saved") : t(lang, "addContact")}
+          </button>
+        </form>
+      </section>
 
       <div className="flex flex-col items-center gap-2">
         <Link
