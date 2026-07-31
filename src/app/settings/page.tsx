@@ -14,6 +14,10 @@ function voiceInstructionsKey(): TranslationKey {
   return "voiceInstructionsGeneric";
 }
 
+const FEEDBACK_URL = `https://github.com/kevinbadz/accessph/issues/new?${new URLSearchParams({
+  body: "**Device:** \n**Browser:** \n**What happened:**\n\n**What I expected:**\n",
+}).toString()}`;
+
 export default function SettingsPage() {
   const { settings, updateSettings } = useSettings();
   const lang = settings.language;
@@ -170,12 +174,22 @@ export default function SettingsPage() {
         </button>
       </form>
 
-      <Link
-        href="/privacy"
-        className="text-center text-base font-medium text-blue-700 underline dark:text-blue-400"
-      >
-        {t(lang, "privacy")}
-      </Link>
+      <div className="flex flex-col items-center gap-2">
+        <Link
+          href="/privacy"
+          className="text-center text-base font-medium text-blue-700 underline dark:text-blue-400"
+        >
+          {t(lang, "privacy")}
+        </Link>
+        <a
+          href={FEEDBACK_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-center text-base font-medium text-blue-700 underline dark:text-blue-400"
+        >
+          {t(lang, "reportProblem")}
+        </a>
+      </div>
     </main>
   );
 }
