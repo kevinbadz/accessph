@@ -3,31 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { useSettings } from "@/components/SettingsProvider";
-import { t, type TranslationKey } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
 import { getSpeechRecognitionCtor, speak, stopSpeaking } from "@/lib/speech";
 import { useSpeechRecognitionSupported } from "@/hooks/useSpeechRecognitionSupported";
-import { isIOS, isAndroid } from "@/lib/platform";
-
-// SpeechRecognition's error codes are collapsed into one generic
-// "didn't catch that" message by default, which hides genuinely different,
-// often fixable problems (permission never granted, no network reaching the
-// recognition service, no mic hardware) behind a message that suggests the
-// user just needs to try again louder — when trying again won't help at all.
-function micErrorKey(errorCode: string): TranslationKey {
-  switch (errorCode) {
-    case "not-allowed":
-    case "service-not-allowed":
-      if (isIOS()) return "micPermissionDeniedIOS";
-      if (isAndroid()) return "micPermissionDeniedAndroid";
-      return "micPermissionDenied";
-    case "audio-capture":
-      return "micNoMicrophone";
-    case "network":
-      return "micNetworkError";
-    default:
-      return "didNotUnderstand";
-  }
-}
+import { micErrorKey } from "@/lib/error-messages";
 
 type CommandRoute = { pattern: RegExp; action: (router: ReturnType<typeof useRouter>) => void };
 

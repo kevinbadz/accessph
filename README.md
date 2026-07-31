@@ -66,13 +66,25 @@ src/
     BigButton.tsx        Shared large-tap-target button
   lib/
     speech.ts            Text-to-speech + speech recognition helpers
-    image-preprocess.ts  Grayscale/contrast normalization for OCR accuracy
-    settings.ts           Settings persistence
-    i18n.ts               English/Filipino UI strings
-    benefits.ts           Government benefits dataset
+    image-preprocess.ts  Grayscale/contrast normalization for OCR accuracy (unit tested)
+    geometry.ts           Camera-preview crop math (unit tested)
+    error-messages.ts     Camera/mic error → user-facing message mapping (unit tested)
+    settings.ts           Settings persistence (unit tested)
+    i18n.ts               English/Filipino UI strings (unit tested for key parity)
+    benefits.ts           Government benefits dataset (unit tested)
 public/
   sw.js                  Offline app-shell service worker (production only)
 ```
+
+## Testing
+
+The pure logic in `src/lib/` (OCR preprocessing, crop math, error mapping, settings, i18n, benefits data) is covered by [Vitest](https://vitest.dev):
+
+```bash
+npm test
+```
+
+UI components aren't covered by automated tests yet — a manual screen reader/keyboard pass is the current substitute (see [CONTRIBUTING.md](./CONTRIBUTING.md)).
 
 ## Known limitations (v1)
 

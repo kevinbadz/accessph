@@ -23,8 +23,13 @@ Run before committing:
 ```bash
 npm run lint
 npx tsc --noEmit
+npm test
 npm run build
 ```
+
+## Tests
+
+`src/lib/` holds the pure logic — image preprocessing, the object-cover crop math, error-message mapping, settings persistence, i18n — deliberately decoupled from React/DOM so it's cheap to test with Vitest. If you touch anything in there, add or update a test alongside it. UI components aren't covered yet; a screen reader/keyboard pass (see above) is the current substitute for component tests.
 
 ## Reporting bugs / requesting features
 

@@ -7,31 +7,14 @@ import { useSettings } from "@/components/SettingsProvider";
 import { t, type TranslationKey } from "@/lib/i18n";
 import { speak } from "@/lib/speech";
 import { preprocessForOcr } from "@/lib/image-preprocess";
+import { computeObjectCoverCrop } from "@/lib/geometry";
+import { cameraErrorKey } from "@/lib/error-messages";
 
 // A page-level mean confidence below this (0-100 scale) is treated as
 // unreliable enough to warn the user rather than reading it back as fact.
 const LOW_CONFIDENCE_THRESHOLD = 60;
 
 type Status = "starting-camera" | "camera-error" | "ready" | "scanning" | "result";
-
-function cameraErrorKey(error: unknown): TranslationKey {
-  if (error instanceof DOMException) {
-    switch (error.name) {
-      case "NotAllowedError":
-      case "PermissionDeniedError":
-        return "cameraPermissionDenied";
-      case "NotFoundError":
-      case "OverconstrainedError":
-        return "cameraNotFound";
-      case "NotReadableError":
-      case "TrackStartError":
-        return "cameraInUse";
-      default:
-        return "cameraError";
-    }
-  }
-  return "cameraError";
-}
 
 export default function ReaderPage() {
   const { settings } = useSettings();
@@ -207,20 +190,7 @@ export default function ReaderPage() {
     // Otherwise, on any camera whose real field of view is wider or taller
     // than 3:4, OCR reads real pixels the user never actually saw on screen,
     // which looks like it's reading the wrong thing entirely.
-    const PREVIEW_ASPECT = 3 / 4;
-    const videoAspect = video.videoWidth / video.videoHeight;
-
-    let sx = 0;
-    let sy = 0;
-    let sWidth = video.videoWidth;
-    let sHeight = video.videoHeight;
-    if (videoAspect > PREVIEW_ASPECT) {
-      sWidth = video.videoHeight * PREVIEW_ASPECT;
-      sx = (video.videoWidth - sWidth) / 2;
-    } else {
-      sHeight = video.videoWidth / PREVIEW_ASPECT;
-      sy = (video.videoHeight - sHeight) / 2;
-    }
+    const { sx, sy, sWidth, sHeight } = computeObjectCoverCrop(video.videoWidth, video.videoHeight, 3 / 4);
 
     canvas.width = sWidth;
     canvas.height = sHeight;

@@ -9,13 +9,9 @@
 // editors, and meaningfully more robust for phone-camera conditions.
 const CLIP_PERCENTILE = 0.01;
 
-export function preprocessForOcr(canvas: HTMLCanvasElement): void {
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-
-  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const pixels = imageData.data;
-  const pixelCount = pixels.length / 4;
+// Pure pixel math, deliberately decoupled from the Canvas API so it can be
+// unit tested without a DOM/canvas environment. Mutates `pixels` in place.
+export function stretchContrast(pixels: Uint8ClampedArray, pixelCount: number): void {
   const gray = new Uint8ClampedArray(pixelCount);
   const histogram = new Uint32Array(256);
 
@@ -48,6 +44,13 @@ export function preprocessForOcr(canvas: HTMLCanvasElement): void {
     pixels[offset + 1] = stretched;
     pixels[offset + 2] = stretched;
   }
+}
 
+export function preprocessForOcr(canvas: HTMLCanvasElement): void {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  stretchContrast(imageData.data, imageData.data.length / 4);
   ctx.putImageData(imageData, 0, 0);
 }
