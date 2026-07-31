@@ -21,6 +21,7 @@ export const strings = {
     retake: "Retake",
     scanning: "Reading text…",
     noTextFound: "No text found. Try moving closer or improving lighting.",
+    ocrError: "Something went wrong while reading the text. Please try again.",
     cameraError: "Couldn't access the camera. Check permissions and try again.",
     cameraPermissionDenied:
       "Camera access was denied. Allow camera access for this site in your browser settings, then try again.",
@@ -113,6 +114,7 @@ export const strings = {
     retake: "Ulitin",
     scanning: "Binabasa ang teksto…",
     noTextFound: "Walang nahanap na teksto. Lumapit pa o pahusayin ang ilaw.",
+    ocrError: "May problema sa pagbasa ng teksto. Subukan ulit.",
     cameraError: "Hindi ma-access ang camera. Suriin ang permissions.",
     cameraPermissionDenied:
       "Na-deny ang camera access. I-allow ang camera para sa site na ito sa settings ng browser mo, tapos subukan ulit.",

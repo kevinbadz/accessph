@@ -49,6 +49,7 @@ export default function ReaderPage() {
   const [resultText, setResultText] = useState("");
   const [errorKey, setErrorKey] = useState<TranslationKey>("cameraError");
   const [lowConfidence, setLowConfidence] = useState(false);
+  const [ocrFailed, setOcrFailed] = useState(false);
   const [modelReady, setModelReady] = useState(false);
   const [scanPhase, setScanPhase] = useState<"preparing" | "recognizing">("preparing");
 
@@ -124,9 +125,6 @@ export default function ReaderPage() {
         setProgress(m.progress);
       },
     }).then(async (worker) => {
-      // AUTO handles the mixed layouts (signs, labels, forms) this app is built
-      // for better than letting Tesseract fall back to its default segmentation.
-      await worker.setParameters({ tessedit_pageseg_mode: PSM.AUTO });
       workerRef.current = worker;
       if (mountedRef.current) setModelReady(true);
       return worker;
@@ -170,11 +168,26 @@ export default function ReaderPage() {
 
     try {
       const worker = await getWorker();
-      const { data } = await worker.recognize(canvas);
+
+      // SINGLE_BLOCK fits this app's actual use case — a close-up photo of one
+      // sign/label/receipt — much better than AUTO, which runs full multi-column
+      // layout analysis and can decide there's "no valid text block" on exactly
+      // this kind of image and return nothing even when the photo is perfectly
+      // readable. If that single block assumption is wrong for a given photo
+      // (e.g. a form with a more complex layout), retry once with AUTO before
+      // giving up.
+      await worker.setParameters({ tessedit_pageseg_mode: PSM.SINGLE_BLOCK });
+      let { data } = await worker.recognize(canvas);
+      if (!data.text.trim()) {
+        await worker.setParameters({ tessedit_pageseg_mode: PSM.AUTO });
+        ({ data } = await worker.recognize(canvas));
+      }
+
       const text = data.text.trim();
       const isLowConfidence = text.length > 0 && data.confidence < LOW_CONFIDENCE_THRESHOLD;
       setResultText(text);
       setLowConfidence(isLowConfidence);
+      setOcrFailed(false);
       setStatus("result");
 
       if (!text) {
@@ -184,22 +197,25 @@ export default function ReaderPage() {
       } else {
         speak(text, lang, settings.speechRate);
       }
-    } catch {
+    } catch (error) {
+      console.error("AccessPH: OCR failed", error);
       setResultText("");
       setLowConfidence(false);
+      setOcrFailed(true);
       setStatus("result");
-      speak(t(lang, "cameraError"), lang, settings.speechRate);
+      speak(t(lang, "ocrError"), lang, settings.speechRate);
     }
   }
 
   function retake() {
     setResultText("");
     setLowConfidence(false);
+    setOcrFailed(false);
     setStatus("ready");
   }
 
   function readAgain() {
-    speak(resultText || t(lang, "noTextFound"), lang, settings.speechRate);
+    speak(resultText || t(lang, ocrFailed ? "ocrError" : "noTextFound"), lang, settings.speechRate);
   }
 
   return (
@@ -274,7 +290,7 @@ export default function ReaderPage() {
             </p>
           )}
           <p className="text-xl leading-relaxed whitespace-pre-wrap">
-            {resultText || t(lang, "noTextFound")}
+            {resultText || t(lang, ocrFailed ? "ocrError" : "noTextFound")}
           </p>
         </section>
       )}
