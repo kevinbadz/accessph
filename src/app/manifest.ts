@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "AccessPH — Accessibility Companion",
     short_name: "AccessPH",
     description:
-      "AI accessibility companion for PWDs and seniors in the Philippines: reads text aloud, understands voice commands, and sends emergency alerts.",
+      "Free accessibility and safety companion for the Philippines: reads text aloud, understands voice commands, sends emergency alerts, and helps riders share their trip before accepting a passenger.",
     start_url: "/",
     display: "standalone",
     background_color: "#0f172a",
@@ -41,6 +41,13 @@ export default function manifest(): MetadataRoute.Manifest {
         short_name: "Emergency",
         description: "Call or text your emergency contact",
         url: "/emergency",
+        icons: [{ src: "/icon-192x192.png", sizes: "192x192" }],
+      },
+      {
+        name: "Share My Trip",
+        short_name: "Share Trip",
+        description: "Photo, location, and a notified contact before you ride",
+        url: "/trip",
         icons: [{ src: "/icon-192x192.png", sizes: "192x192" }],
       },
     ],

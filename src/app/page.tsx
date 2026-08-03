@@ -32,6 +32,12 @@ export default function Home() {
           tone="danger"
         />
         <BigButton
+          href="/trip"
+          icon="🛵"
+          label={t(lang, "shareTrip")}
+          sublabel={t(lang, "shareTripSub")}
+        />
+        <BigButton
           href="/benefits"
           icon="🏛️"
           label={t(lang, "benefits")}

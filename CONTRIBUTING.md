@@ -1,13 +1,14 @@
 # Contributing to AccessPH
 
-Thanks for considering a contribution. AccessPH is built for real accessibility needs in the Philippines, so the bar for changes is: does this make the app more usable for a blind, low-vision, deaf, mobility-impaired, or senior user, without adding cost or complexity that undermines it working on a low-end Android phone?
+Thanks for considering a contribution. AccessPH is built for real accessibility and safety needs in the Philippines, so the bar for changes is: does this make the app more usable for a blind, low-vision, deaf, mobility-impaired, or senior user — or genuinely safer for a rider using Share My Trip — without adding cost or complexity that undermines it working on a low-end Android phone?
 
 ## Ground rules
 
 - **No feature that requires a paid API key ships in the default path.** Free/offline-first is the whole point. If you want to add a cloud AI feature, gate it behind an optional setting with a clear "this needs internet and may cost the site owner money" note.
 - **Every screen must work with a screen reader and a keyboard.** Test with VoiceOver (iOS/macOS) or TalkBack (Android) before opening a PR touching UI.
 - **Bilingual by default.** Any new user-facing string goes into `src/lib/i18n.ts` for both `en` and `fil` — no hardcoded English strings in components.
-- **No silent side effects.** Anything that sends a message, shares location, or leaves the app (SMS, calls, external links) must be a clear, deliberate user action — never automatic.
+- **No silent side effects.** Anything that sends a message, shares location, calls someone, or leaves the app must be a clear, deliberate action the user takes — never automatic. This matters most for Emergency and Share My Trip: a user who can't trust exactly what the app will and won't do on its own is a user who can't trust it when it counts.
+- **Don't overpromise safety.** Share My Trip cannot prevent an ambush in progress. Copy, UI, and marketing language should never imply otherwise — the honest claim is deterrence and evidence, not protection.
 
 ## Development setup
 
